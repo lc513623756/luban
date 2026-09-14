@@ -1,0 +1,64 @@
+using System;
+using System.Collections.Generic;
+
+{{namespace_with_grace_begin model.namespace}}
+    /// <summary>
+    /// 强类型业务埋点入口。公共参数采集、会话状态和发送管理由目标统计框架负责。
+    /// </summary>
+    public static class {{ model.manager }}
+    {
+        /// <summary>
+        /// 通过项目绑定模板注册游戏采集器，入口本身不保存采集器。
+        /// </summary>
+        /// <param name="collector">游戏采集器；传入 null 清除游戏采集，框架注入由项目模板决定。</param>
+        public static void BindCommonParametersCollector(IAnalyticsCommonParametersCollector collector)
+        {
+{{ model.bind_common_body }}
+        }
+
+        private static void Submit(AnalyticsEventDefinition definition, IReadOnlyDictionary<string, object> values)
+        {
+{{ model.send_body }}
+        }
+
+{{~ for event in model.events ~}}
+        /// <summary>
+        /// {{escape_comment event.comment}}
+        /// </summary>
+        public static AnalyticsEventDefinition {{ event.definition }} { get; } = new AnalyticsEventDefinition(
+            {{ event.event_name }},
+            {{ if event.platform_tags == "" }}Array.Empty<string>(){{ else }}new string[] { {{ event.platform_tags }} }{{ end }},
+            {{ event.once_key }});
+
+        /// <summary>
+        /// {{escape_comment event.comment}}
+        /// </summary>
+{{~ if event.groups.size > 1 ~}}
+        public static void {{ event.name }}(
+{{~ for group in event.groups ~}}
+            {{ group.type }} {{ group.argument }}{{ if !for.last }},{{ else }}){{ end }}
+{{~ end ~}}
+{{~ else ~}}
+        public static void {{ event.name }}({{ event.signature }})
+{{~ end ~}}
+        {
+{{~ for group in event.groups ~}}
+            if ({{ group.argument }} == null)
+            {
+                throw new ArgumentNullException(nameof({{ group.argument }}));
+            }
+
+{{~ end ~}}
+            var values = new Dictionary<string, object>(StringComparer.Ordinal);
+{{~ for group in event.groups ~}}
+            {{ group.argument }}.AppendTo(values);
+{{~ end ~}}
+
+            Submit({{ event.definition }}, values);
+        }
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}
+    }
+{{namespace_with_grace_end model.namespace}}

@@ -1,0 +1,26 @@
+using System;
+using System.Collections.Generic;
+
+{{namespace_with_grace_begin model.namespace}}
+    /// <summary>
+    /// 表中声明的事件名称、平台标签和一次性键。实际路由与去重由统计框架负责。
+    /// </summary>
+    public sealed class AnalyticsEventDefinition
+    {
+        public string Name { get; }
+
+        public IReadOnlyList<string> PlatformTags { get; }
+
+        public string OnceKey { get; }
+
+        internal AnalyticsEventDefinition(
+            string name,
+            string[] platformTags,
+            string onceKey)
+        {
+            Name = name;
+            PlatformTags = Array.AsReadOnly((string[])platformTags.Clone());
+            OnceKey = onceKey;
+        }
+    }
+{{namespace_with_grace_end model.namespace}}

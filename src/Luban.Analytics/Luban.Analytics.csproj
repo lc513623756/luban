@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Luban.Core/Luban.Core.csproj" />
+    <ProjectReference Include="../Luban.DataLoader.Builtin/Luban.DataLoader.Builtin.csproj" />
+    <ProjectReference Include="../Luban.CSharp/Luban.CSharp.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Templates/**/*.sbn" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+</Project>

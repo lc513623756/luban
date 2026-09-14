@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+
+{{namespace_with_grace_begin model.namespace}}
+    /// <summary>
+    /// {{escape_comment group.comment}}
+    /// </summary>
+    public sealed class {{ group.name }}
+    {
+{{~ for field in group.fields ~}}
+        /// <summary>
+        /// {{escape_comment field.comment}}
+        /// </summary>
+        public {{ field.type }} {{ field.name }} { get; }
+
+{{~ end ~}}
+        /// <summary>
+        /// {{escape_comment group.comment}}
+        /// </summary>
+{{~ for field in group.constructor_fields ~}}
+        /// <param name="{{ field.parameter_name }}">{{escape_comment field.comment}}</param>
+{{~ end ~}}
+{{~ if group.constructor_fields.size == 0 ~}}
+        public {{ group.name }}()
+{{~ else ~}}
+        public {{ group.name }}(
+{{~ for field in group.constructor_fields ~}}
+            {{ field.type }} {{ field.argument }}{{ if !field.required }} = {{ field.default_value }}{{ end }}{{ if !for.last }},{{ else }}){{ end }}
+{{~ end ~}}
+{{~ end ~}}
+        {
+{{~ for field in group.fields ~}}
+{{~ if field.type == "string" ~}}
+            {{ field.name }} = {{ field.argument }} ?? throw new ArgumentNullException(nameof({{ field.argument }}));
+{{~ else ~}}
+            {{ field.name }} = {{ field.argument }};
+{{~ end ~}}
+{{~ end ~}}
+        }
+
+        /// <summary>
+        /// 转换为只读上报参数集合，枚举使用参数表配置的上报值。
+        /// </summary>
+        public IReadOnlyDictionary<string, object> ToParameters()
+        {
+            var values = new Dictionary<string, object>(StringComparer.Ordinal);
+            AppendTo(values);
+            return new ReadOnlyDictionary<string, object>(values);
+        }
+
+{{~ if group.is_common ~}}
+        /// <summary>
+        /// 合并框架传入参数与游戏采集参数，构造事件发生时的只读参数集合。
+        /// </summary>
+        /// <param name="input">框架传入参数，不能为空。</param>
+        /// <param name="collected">游戏采集参数，允许为空，此时只包含传入字段。</param>
+        public static IReadOnlyDictionary<string, object> Compose(
+            {{ group.input_type }} input,
+            {{ group.collected_type }} collected)
+        {
+            if (input == null)
+            {
+                throw new ArgumentNullException(nameof(input));
+            }
+
+            var values = new Dictionary<string, object>(StringComparer.Ordinal);
+            input.AppendTo(values);
+            collected?.AppendTo(values);
+            return new ReadOnlyDictionary<string, object>(values);
+        }
+
+{{~ end ~}}
+        internal void AppendTo(Dictionary<string, object> values)
+        {
+{{~ for field in group.fields ~}}
+            values.Add({{ field.key }}, {{ field.report_expression }});
+{{~ end ~}}
+        }
+    }
+{{namespace_with_grace_end model.namespace}}

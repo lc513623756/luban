@@ -48,6 +48,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Luban.Analytics\Luban.Analytics.csproj" />
       <ProjectReference Include="..\Luban.Bson\Luban.Bson.csproj" />
       <ProjectReference Include="..\Luban.Cpp\Luban.Cpp.csproj" />
       <ProjectReference Include="..\Luban.CSharp\Luban.CSharp.csproj" />

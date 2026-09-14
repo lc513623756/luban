@@ -1,0 +1,41 @@
+using System;
+
+{{namespace_with_grace_begin model.namespace}}
+    /// <summary>
+    /// 参数表引用的统计枚举：{{ enum.name }}。
+    /// </summary>
+    public enum {{ enum.name }}
+    {
+{{~ for item in enum.items ~}}
+        /// <summary>
+        /// {{escape_comment item.comment}}
+        /// </summary>
+        {{ item.name }} = {{ item.value }},
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}
+    }
+
+    /// <summary>
+    /// 将强类型枚举转换为表中配置的上报值。
+    /// </summary>
+    public static partial class AnalyticsEnumValues
+    {
+        /// <summary>
+        /// 返回枚举成员的上报值，未定义的成员抛出参数异常。
+        /// </summary>
+        public static string ToReportValue({{ enum.name }} value)
+        {
+            switch (value)
+            {
+{{~ for item in enum.items ~}}
+                case {{ enum.name }}.{{ item.name }}:
+                    return {{ item.report_value }};
+{{~ end ~}}
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown analytics enum member.");
+            }
+        }
+    }
+{{namespace_with_grace_end model.namespace}}

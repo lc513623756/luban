@@ -1,0 +1,12 @@
+{{namespace_with_grace_begin model.namespace}}
+    /// <summary>
+    /// 游戏实现的基础参数采集契约，仅提供参数表中未标记 injected 的字段。
+    /// </summary>
+    public interface IAnalyticsCommonParametersCollector
+    {
+        /// <summary>
+        /// 在事件发生时采集游戏数据。不要在采集过程中提交事件或修改统计框架。
+        /// </summary>
+        {{ model.common_collected_type }} Collect();
+    }
+{{namespace_with_grace_end model.namespace}}
