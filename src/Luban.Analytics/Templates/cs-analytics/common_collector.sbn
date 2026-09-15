@@ -1,6 +1,6 @@
 {{namespace_with_grace_begin model.namespace}}
     /// <summary>
-    /// 游戏实现的基础参数采集契约，仅提供参数表中未标记 injected 的字段。
+    /// 游戏实现的基础参数采集契约，仅提供基础参数表中未标记 injected 的字段。
     /// </summary>
     public interface IAnalyticsCommonParametersCollector
     {

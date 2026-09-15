@@ -1,1 +1,0 @@
-            throw new InvalidOperationException("Configure cs-analytics/send.sbn for your tracking framework.");

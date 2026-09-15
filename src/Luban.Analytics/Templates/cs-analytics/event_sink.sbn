@@ -1,0 +1,22 @@
+using System.Collections.Generic;
+
+{{namespace_with_grace_begin model.namespace}}
+    /// <summary>
+    /// 生成代码与项目统计框架之间的默认接入契约。
+    /// </summary>
+    public interface IAnalyticsEventSink
+    {
+        /// <summary>
+        /// 更新游戏基础参数采集器。传入 null 时只保留接收框架提供的字段。
+        /// </summary>
+        void SetCommonParametersCollector(IAnalyticsCommonParametersCollector collector);
+
+        /// <summary>
+        /// 记录一次业务事件，提交和发送结果由目标框架内部处理。
+        /// </summary>
+        void Submit(
+            AnalyticsEventDefinition definition,
+            string onceKey,
+            IReadOnlyDictionary<string, object> parameters);
+    }
+{{namespace_with_grace_end model.namespace}}

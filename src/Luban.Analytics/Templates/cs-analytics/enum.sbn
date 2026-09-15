@@ -2,13 +2,13 @@ using System;
 
 {{namespace_with_grace_begin model.namespace}}
     /// <summary>
-    /// 参数表引用的统计枚举：{{ enum.name }}。
+    /// 词典生成的统计枚举：{{ enum.name }}。
     /// </summary>
     public enum {{ enum.name }}
     {
 {{~ for item in enum.items ~}}
         /// <summary>
-        /// {{escape_comment item.comment}}
+        /// {{if item.comment == ""}}统计枚举成员：{{ item.name }}。{{else}}{{escape_comment item.comment}}{{end}}
         /// </summary>
         {{ item.name }} = {{ item.value }},
 {{~ if !for.last ~}}
@@ -37,5 +37,23 @@ using System;
                     throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown analytics enum member.");
             }
         }
+{{~ if enum.is_funnel_step ~}}
+
+        /// <summary>
+        /// 返回导表时确定的步骤一次性键，未定义的成员抛出参数异常。
+        /// </summary>
+        public static string ToOnceKey({{ enum.name }} value)
+        {
+            switch (value)
+            {
+{{~ for item in enum.items ~}}
+                case {{ enum.name }}.{{ item.name }}:
+                    return {{ item.once_key }};
+{{~ end ~}}
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown analytics enum member.");
+            }
+        }
+{{~ end ~}}
     }
 {{namespace_with_grace_end model.namespace}}

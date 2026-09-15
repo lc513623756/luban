@@ -1,25 +1,17 @@
 # Luban.Analytics
 
-基于 Luban 5.1 的工具扩展程序集，通过 `[RegisterBehaviour]` 注册。
-主 Luban 工程引用本程序集，构建时包含插件及默认 Scriban 模板。
+`Luban.Analytics` 是基于 Luban 5.1 的统计代码生成扩展。主程序引用该程序集并加载默认 Scriban 模板，游戏运行时不引用生成工具。
 
-- `AnalyticsSchemaLoader`：注册 schema 类型 `analytics`，复用内置 Excel reader。
-  读取三张统计表，构造 `RawBean`、`RawEnum`，通过 `analytics.*` Tags 传递元数据。
-  不注册 `RawTable`，不需要运行时配置数据，也不使用静态可变状态。
-- `AnalyticsCodeTarget`：注册 `cs-analytics`，复用 C# CodeStyle、模板搜索和输出机制。
-  校验统计规则，将已编译定义转换为明确的模板模型，再输出代码。
-- `Templates/cs-analytics/`：使用 bean、enum、manager 和事件/接口模板，
-  按类型输出独立文件；枚举转换随对应枚举文件生成，可通过 `customTemplateDir` 分别覆盖。
+- `AnalyticsSchemaLoader` 注册 `analytics` schema，负责词典语义和 `RawBean` / `RawEnum` 构造；`AnalyticsSchemaLoader.Excel.cs` 负责表头、数据行和实际合并区域读取。两者复用内置 Excel reader、`##var` / `##` 约定和 `SchemaSource`，不生成 `RawTable` 或运行时数据。
+- `AnalyticsCodeTarget` 注册 `cs-analytics`，负责事件模型和文件输出；`AnalyticsCodeTarget.Parameters.cs` 负责参数类型、默认值和 C# 名称校验。每种生成类型输出独立文件。
+- `Templates/cs-analytics` 提供参数、枚举、事件定义、基础参数采集器、事件接收接口和静态入口。
 
-生成代码携带路由和 OnceKey 元数据，不识别漏斗；send.sbn 与 bind_common.sbn 可独立覆盖发送入口和公共参数绑定，业务事件方法返回 void。
-配置中的统计工作簿合并处理，OnceKey 校验覆盖所有配置文件。
-支持参数组、枚举名称纵向合并；事件名称合并区块内每行配置一个 parameter_group，保留原始配表行定位，不使用任意空白向下填充。
-游戏不引用本工具程序集。
+事件参数直接定义在事件区块中。每个有参数的事件生成自己的 `XxxParameters`；枚举按事件名和参数名自动命名。整张基础参数表按 `analytics.commonTypePrefix` 生成完整类型、框架传入类型、游戏采集类型和枚举，`injected` 只区分框架传入字段与游戏采集字段。
 
-仓库级用法、示例配表和集成检查见根目录 `AnalyticsTables/README.md`。
+事件方法返回 `bool`，只表示目标框架是否接收。项目在 Game 层实现并绑定 `IAnalyticsEventSink`，其中可以接入 Core 管理器或其它统计框架。生成工具不负责接收器 SDK、缓存、重试或一次性持久化。
 
-## 静态入口与框架接入
+`kind=funnel` 时，`step_field` 引用当前事件内必填且无默认值的枚举参数。生成入口用事件名和枚举上报值计算稳定的一次性键，不解释业务步骤顺序。
 
-生成静态事件入口、事件定义、参数类型和 IAnalyticsCommonParametersCollector，不生成发送结果、sink 或运行时快照。公共参数类型提供 ToParameters 转换。send.sbn 与 bind_common.sbn 分别定义转发和收集器绑定，内置片段未配置时抛出配置错误。运行时元数据与公共参数采集由目标框架管理。
+扩展读取 `analytics.eventsSheet`、`analytics.commonParametersSheet` 和 `analytics.commonTypePrefix`。旧 `parametersSheet`、`enumsSheet`、`commonGroup` 和旧三表表头会给出迁移错误。多个 analytics `schemaFiles` 作为同一套词典校验，错误保留文件、工作表和行位置。
 
-基础组通过 injected 标记区分传入与采集字段，并生成完整参数、Input、CollectedParameters 和 Compose。收集器只返回 CollectedParameters。injected 默认 false，只允许基础组必填且没有默认值的字段；导表器不按名称推断取值。具体框架映射在项目 bind_common 模板中通过具名构造参数定义。
+完整配表格式、调用方式和验证命令见 `AnalyticsTables/README.md`。

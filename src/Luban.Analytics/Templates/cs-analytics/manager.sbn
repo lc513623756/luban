@@ -7,18 +7,40 @@ using System.Collections.Generic;
     /// </summary>
     public static class {{ model.manager }}
     {
+        private static IAnalyticsEventSink _eventSink;
+        private static IAnalyticsCommonParametersCollector _commonParametersCollector;
+
         /// <summary>
-        /// 通过项目绑定模板注册游戏采集器，入口本身不保存采集器。
+        /// 绑定接收生成事件的统计框架。传入 null 时停止接收后续事件。
         /// </summary>
-        /// <param name="collector">游戏采集器；传入 null 清除游戏采集，框架注入由项目模板决定。</param>
-        public static void BindCommonParametersCollector(IAnalyticsCommonParametersCollector collector)
+        public static void BindEventSink(IAnalyticsEventSink eventSink)
         {
-{{ model.bind_common_body }}
+            if (ReferenceEquals(_eventSink, eventSink))
+            {
+                return;
+            }
+
+            _eventSink?.SetCommonParametersCollector(null);
+            _eventSink = eventSink;
+            _eventSink?.SetCommonParametersCollector(_commonParametersCollector);
         }
 
-        private static void Submit(AnalyticsEventDefinition definition, IReadOnlyDictionary<string, object> values)
+        /// <summary>
+        /// 注册游戏基础参数采集器，并同步到当前事件接收器。
+        /// </summary>
+        /// <param name="collector">游戏采集器；传入 null 清除游戏采集，但保留接收框架提供的字段。</param>
+        public static void BindCommonParametersCollector(IAnalyticsCommonParametersCollector collector)
         {
-{{ model.send_body }}
+            _commonParametersCollector = collector;
+            _eventSink?.SetCommonParametersCollector(collector);
+        }
+
+        /// <summary>
+        /// 提交事件定义、已生成的一次性键和当前参数，未绑定接收器时忽略事件。
+        /// </summary>
+        private static void Submit(AnalyticsEventDefinition definition, string onceKey, IReadOnlyDictionary<string, object> values)
+        {
+            _eventSink?.Submit(definition, onceKey, values);
         }
 
 {{~ for event in model.events ~}}
@@ -27,34 +49,28 @@ using System.Collections.Generic;
         /// </summary>
         public static AnalyticsEventDefinition {{ event.definition }} { get; } = new AnalyticsEventDefinition(
             {{ event.event_name }},
-            {{ if event.platform_tags == "" }}Array.Empty<string>(){{ else }}new string[] { {{ event.platform_tags }} }{{ end }},
-            {{ event.once_key }});
+            {{ if event.receiver_ids == "" }}Array.Empty<string>(){{ else }}new string[] { {{ event.receiver_ids }} }{{ end }},
+            {{ if event.is_funnel }}true{{ else }}false{{ end }},
+            {{ event.step_field }});
 
         /// <summary>
         /// {{escape_comment event.comment}}
         /// </summary>
-{{~ if event.groups.size > 1 ~}}
-        public static void {{ event.name }}(
-{{~ for group in event.groups ~}}
-            {{ group.type }} {{ group.argument }}{{ if !for.last }},{{ else }}){{ end }}
-{{~ end ~}}
-{{~ else ~}}
-        public static void {{ event.name }}({{ event.signature }})
-{{~ end ~}}
+        public static void {{ event.name }}({{ if event.has_parameters }}{{ event.parameters_type }} {{ event.parameters_argument }}{{ end }})
         {
-{{~ for group in event.groups ~}}
-            if ({{ group.argument }} == null)
+{{~ if event.has_parameters ~}}
+            if ({{ event.parameters_argument }} == null)
             {
-                throw new ArgumentNullException(nameof({{ group.argument }}));
+                throw new ArgumentNullException(nameof({{ event.parameters_argument }}));
             }
 
-{{~ end ~}}
             var values = new Dictionary<string, object>(StringComparer.Ordinal);
-{{~ for group in event.groups ~}}
-            {{ group.argument }}.AppendTo(values);
+            {{ event.parameters_argument }}.AppendTo(values);
+{{~ else ~}}
+            var values = new Dictionary<string, object>(StringComparer.Ordinal);
 {{~ end ~}}
 
-            Submit({{ event.definition }}, values);
+            Submit({{ event.definition }}, {{ if event.is_funnel }}AnalyticsEnumValues.ToOnceKey({{ event.parameters_argument }}.{{ event.step_property }}){{ else }}""{{ end }}, values);
         }
 {{~ if !for.last ~}}
 

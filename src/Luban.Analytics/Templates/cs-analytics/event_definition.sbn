@@ -3,24 +3,43 @@ using System.Collections.Generic;
 
 {{namespace_with_grace_begin model.namespace}}
     /// <summary>
-    /// 表中声明的事件名称、平台标签和一次性键。实际路由与去重由统计框架负责。
+    /// 表中声明的事件名称、接收器标识及漏斗步骤字段。实际路由与去重由统计框架负责。
     /// </summary>
     public sealed class AnalyticsEventDefinition
     {
+        /// <summary>
+        /// 词典配置的事件上报名称。
+        /// </summary>
         public string Name { get; }
 
-        public IReadOnlyList<string> PlatformTags { get; }
+        /// <summary>
+        /// 目标接收器标识；空集合表示所有启用接收器。
+        /// </summary>
+        public IReadOnlyList<string> ReceiverIds { get; }
 
-        public string OnceKey { get; }
+        /// <summary>
+        /// 是否为每个步骤分别记录一次的漏斗事件。
+        /// </summary>
+        public bool IsFunnel { get; }
 
+        /// <summary>
+        /// 从配表引用解析出的步骤上报字段名，普通事件为空字符串。
+        /// </summary>
+        public string StepField { get; }
+
+        /// <summary>
+        /// 创建词典事件定义，并复制接收器标识防止后续修改。
+        /// </summary>
         internal AnalyticsEventDefinition(
             string name,
-            string[] platformTags,
-            string onceKey)
+            string[] receiverIds,
+            bool isFunnel,
+            string stepField)
         {
             Name = name;
-            PlatformTags = Array.AsReadOnly((string[])platformTags.Clone());
-            OnceKey = onceKey;
+            ReceiverIds = Array.AsReadOnly((string[])receiverIds.Clone());
+            IsFunnel = isFunnel;
+            StepField = stepField;
         }
     }
 {{namespace_with_grace_end model.namespace}}

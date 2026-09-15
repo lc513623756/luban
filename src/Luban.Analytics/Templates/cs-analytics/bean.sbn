@@ -4,22 +4,22 @@ using System.Collections.ObjectModel;
 
 {{namespace_with_grace_begin model.namespace}}
     /// <summary>
-    /// {{escape_comment group.comment}}
+    /// {{if group.comment == ""}}统计参数类型：{{ group.name }}。{{else}}{{escape_comment group.comment}}{{end}}
     /// </summary>
     public sealed class {{ group.name }}
     {
 {{~ for field in group.fields ~}}
         /// <summary>
-        /// {{escape_comment field.comment}}
+        /// {{if field.comment == ""}}上报参数：{{ field.parameter_name }}。{{else}}{{escape_comment field.comment}}{{end}}
         /// </summary>
         public {{ field.type }} {{ field.name }} { get; }
 
 {{~ end ~}}
         /// <summary>
-        /// {{escape_comment group.comment}}
+        /// {{if group.comment == ""}}统计参数类型：{{ group.name }}。{{else}}{{escape_comment group.comment}}{{end}}
         /// </summary>
 {{~ for field in group.constructor_fields ~}}
-        /// <param name="{{ field.parameter_name }}">{{escape_comment field.comment}}</param>
+        /// <param name="{{ field.parameter_name }}">{{if field.comment == ""}}上报参数：{{ field.parameter_name }}。{{else}}{{escape_comment field.comment}}{{end}}</param>
 {{~ end ~}}
 {{~ if group.constructor_fields.size == 0 ~}}
         public {{ group.name }}()
@@ -40,7 +40,7 @@ using System.Collections.ObjectModel;
         }
 
         /// <summary>
-        /// 转换为只读上报参数集合，枚举使用参数表配置的上报值。
+        /// 转换为只读上报参数集合，枚举使用词典配置的上报值。
         /// </summary>
         public IReadOnlyDictionary<string, object> ToParameters()
         {
@@ -71,6 +71,9 @@ using System.Collections.ObjectModel;
         }
 
 {{~ end ~}}
+        /// <summary>
+        /// 将本类型的上报字段加入参数集合，枚举转换为词典配置的上报值。
+        /// </summary>
         internal void AppendTo(Dictionary<string, object> values)
         {
 {{~ for field in group.fields ~}}

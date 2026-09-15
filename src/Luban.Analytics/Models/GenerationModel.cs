@@ -5,8 +5,6 @@ namespace Luban.Analytics;
 /// </summary>
 public sealed class GenerationModel
 {
-    public string BindCommonBody { get; set; }
-    public string SendBody { get; set; }
     public string Namespace { get; init; }
     public string Manager { get; init; }
     public string CommonInputType { get; init; }
